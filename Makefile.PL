@@ -7,6 +7,8 @@ all_from 'lib/Catalyst/View/APNS.pm';
 tests 't/*.t';
 author_tests 'xt';
 
+requires 'AnyEvent::APNS';
+
 build_requires 'Test::More';
 use_test_base;
 auto_include;
