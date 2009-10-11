@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use base qw/ Catalyst::View /;
 use AnyEvent::APNS;
+use Carp;
 our $VERSION = '0.01';
 
 __PACKAGE__->mk_accessors(qw/apns cv/);

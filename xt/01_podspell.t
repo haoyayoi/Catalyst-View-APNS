@@ -23,5 +23,5 @@ __DATA__
 haoyayoi
 st.hao.yayoi@gmail.com
 Catalyst::View::APNS
-
+apns
 
