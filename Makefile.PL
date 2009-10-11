@@ -8,6 +8,7 @@ tests 't/*.t';
 author_tests 'xt';
 
 requires 'AnyEvent::APNS';
+requires 'Catalyst';
 
 build_requires 'Test::More';
 use_test_base;
