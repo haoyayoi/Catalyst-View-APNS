@@ -3,15 +3,17 @@ package Catalyst::View::APNS;
 use strict;
 use warnings;
 use base qw/ Catalyst::View /;
-use Encode qw/encode decode/;
-use APNS::APNS;
+use AnyEvent::APNS;
 our $VERSION = '0.01';
 
-__PACKAGE__->mk_accessors(qw/apns/);
+__PACKAGE__->mk_accessors(qw/apns cv/);
 
 sub new {
     my ( $class, $c, $arguments ) = @_;
     my $self => $class->next::method($c);
+    
+    my $cv = AnyEvent->condvar;
+    $self->cv($cv);
 
     my $apns;
     if (my $args = $self->{apns}) {
@@ -39,6 +41,13 @@ sub process {
         unless (ref($c->{apns}->{payload}) eq 'HASH');
     $self->apns->connect;
     $self->apns->send( $c->{apns}->{device_token}, $c->{apns}->{payload} );
+    $self->apns->handler->on_drain(
+        sub {
+            undef $_[0];
+            $self->cv->send;
+        }
+    );
+    $self->cv->recv;
 }
 
 1;
@@ -59,7 +68,17 @@ use base qw/Catalyst::View::APNS/;
 MyApp->config({
     apns => {
         certification => cert #require to specify
-        
+        private_key   => key  #require to specify
+        sandbox       => 0|1  #optional
+    }
+});
+
+sub hello : Local {
+    my ( $self, $c ) = @_;
+    $c->stash->{apns}->{device_token} = $device_token;
+    $c->stash->{apns}->{payload} = $payload;
+    $c->forward('MyApp::View::APNS');
+}
 
 Use the helper to create your View:
  
