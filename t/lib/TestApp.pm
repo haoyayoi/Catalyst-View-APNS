@@ -9,9 +9,9 @@ __PACKAGE__->config({
     name => 'TestApp',
     'View::APNS' => {
          apns => {
-             certificate => "test",
-             private_key => "key",
-             sandbox     => 1,
+             certification => "test",
+             private_key   => "key",
+             sandbox       => 1,
          }
     },
 });

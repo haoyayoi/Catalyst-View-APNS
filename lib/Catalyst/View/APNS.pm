@@ -8,7 +8,7 @@ use Carp;
 use Catalyst::Exception;
 our $VERSION = '0.01';
 
-__PACKAGE__->mk_accessors(qw(apns cv));
+__PACKAGE__->mk_accessors(qw(apns cv certification private_key sandbox));
 
 sub new {
     my ( $class, $c, $arguments ) = @_;
@@ -16,19 +16,39 @@ sub new {
 
     my $cv = AnyEvent->condvar;
     $self->cv($cv);
+    for my $field (keys(%$arguments)) {
+        next unless $field;
+        next if $field ne 'apns';
+        my $subs = $arguments->{$field};
+        for my $subfield (keys(%$subs)) {
+            if ($self->can($subfield)) {
+                $self->$subfield($subs->{$subfield});
+            } else {
+                $c->log->debug("Invalied parameter ".$subfield);
+            }
+        }
+    }
+    unless ($self->certification) {
+        croak "Invalied certification";
+    }
+    unless ($self->private_key) {
+        croak "Invalied private_key";
+    }
+    if ($self->sandbox ne 1) {
+        $self->sandbox(0);
+    }
 
     my $apns;
-    next if ( ref(%$arguments) ne 'HASH' );
-    if (my $args = %$arguments) {
-        $arguments->{sandbox} = 0
-            unless $arguments->{sandbox};
+    eval {
         $apns = AnyEvent::APNS->new(
-            certificate => $arguments->{certification},
-            private_key => $arguments->{private_key},
-            sandbox     => $arguments->{sandbox},
+            certificate => $self->certification,
+            private_key => $self->private_key,
+            sandbox     => $self->sandbox,
         );
+    };
+    if ($@) {
+        croak $@;
     }
-    die Dumper($apns);
     $self->apns($apns);
     return $self;
 }
