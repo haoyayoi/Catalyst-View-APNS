@@ -1,47 +1,44 @@
 package Catalyst::View::APNS;
 
 use strict;
-use warnings;
-use base qw/ Catalyst::View /;
 use AnyEvent::APNS;
+use base qw( Catalyst::View );
+use Data::Dumper;
 use Carp;
+use Catalyst::Exception;
 our $VERSION = '0.01';
 
-__PACKAGE__->mk_accessors(qw/apns cv/);
+__PACKAGE__->mk_accessors(qw(apns cv));
 
 sub new {
     my ( $class, $c, $arguments ) = @_;
-    my $self => $class->next::method($c);
-    
+    my $self = $class->next::method($c);
+
     my $cv = AnyEvent->condvar;
     $self->cv($cv);
 
     my $apns;
-    if (my $args = $self->{apns}) {
-        if (ref($args) eq 'HASH') {
-            $self->{apns}->{sandbox} = 0
-                unless $self->{apns}->{sandbox};
-            $apns = AnyEvent::APNS->new(
-                certificate => $self->{apns}->{certification},
-                private_key => $self->{apns}->{private_key},
-                sandbox     => $self->{apns}->{sandbox},
-            );
-        } else {
-            croak "Invalid new specified, check pod for AnyEvent::APNS";
-        }
+    next if ( ref(%$arguments) ne 'HASH' );
+    if (my $args = %$arguments) {
+        $arguments->{sandbox} = 0
+            unless $arguments->{sandbox};
+        $apns = AnyEvent::APNS->new(
+            certificate => $arguments->{certification},
+            private_key => $arguments->{private_key},
+            sandbox     => $arguments->{sandbox},
+        );
     }
+    die Dumper($apns);
     $self->apns($apns);
     return $self;
 }
 
 sub process {
     my ( $self, $c ) = @_;
-    croak "Unable to push notification, bad apns configuration"
+    croak "Invalid new setting, please read pod at AnyEvent::APNS"
         unless $self->apns;
-    croak "Invalid payload specified, check pod for AnyEvent::APNS"
-        unless (ref($c->{apns}->{payload}) eq 'HASH');
     $self->apns->connect;
-    $self->apns->send( $c->{apns}->{device_token}, $c->{apns}->{payload} );
+    $self->apns->send( $c->stash->{device_token}, $c->stash->{payload} );
     $self->apns->handler->on_drain(
         sub {
             undef $_[0];
