@@ -1,21 +1,19 @@
 package Catalyst::View::APNS;
 
 use strict;
-use AnyEvent::APNS;
+use Net::APNS;
 use base qw( Catalyst::View );
 use Data::Dumper;
 use Carp;
 use Catalyst::Exception;
 our $VERSION = '0.01';
 
-__PACKAGE__->mk_accessors(qw(apns cv certification private_key sandbox));
+__PACKAGE__->mk_accessors(qw(apns cv certification private_key));
 
 sub new {
     my ( $class, $c, $arguments ) = @_;
     my $self = $class->next::method($c);
 
-    my $cv = AnyEvent->condvar;
-    $self->cv($cv);
     for my $field (keys(%$arguments)) {
         next unless $field;
         next if $field ne 'apns';
@@ -34,38 +32,21 @@ sub new {
     unless ($self->private_key) {
         croak "Invalied private_key";
     }
-    if ($self->sandbox ne 1) {
-        $self->sandbox(0);
-    }
-
-    my $apns;
-    eval {
-        $apns = AnyEvent::APNS->new(
-            certificate => $self->certification,
-            private_key => $self->private_key,
-            sandbox     => $self->sandbox,
-        );
-    };
-    if ($@) {
-        croak $@;
-    }
-    $self->apns($apns);
     return $self;
 }
 
 sub process {
     my ( $self, $c ) = @_;
-    croak "Invalid new setting, please read pod at AnyEvent::APNS"
-        unless $self->apns;
-    $self->apns->connect;
-    $self->apns->send( $c->stash->{device_token}, $c->stash->{payload} );
-    $self->apns->handler->on_drain(
-        sub {
-            undef $_[0];
-            $self->cv->send;
-        }
-    );
-    $self->cv->recv;
+    my $apns = Net::APNS->new;
+    my $notify = $apns->notify({
+        cert   => $self->certification,
+        key    => $self->private_key,
+        passwd => "Sr2k5tG",
+    });
+    $notify->devicetoken($c->stash->{device_token});
+    $notify->message($c->stash->{alert});
+    $notify->badge($c->stash->{badge});
+    $notify->write;
 }
 
 1;
