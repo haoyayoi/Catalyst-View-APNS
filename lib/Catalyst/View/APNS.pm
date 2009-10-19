@@ -41,7 +41,7 @@ sub process {
     my $notify = $apns->notify({
         cert   => $self->certification,
         key    => $self->private_key,
-        passwd => "Sr2k5tG",
+        passwd => $self->passwd,
     });
     $notify->devicetoken($c->stash->{device_token});
     $notify->message($c->stash->{alert});
