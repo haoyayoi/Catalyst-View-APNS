@@ -9,8 +9,8 @@ plan tests => 1;
 
 my $entrypoint = "http://localhost/push";
 {
-    my $response  = request($entrypoint);
-    is ($response->code, 500);
+    my $response = request($entrypoint);
+    is( $response->code, 500 );
 };
 
 1;

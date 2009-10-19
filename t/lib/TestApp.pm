@@ -12,6 +12,7 @@ __PACKAGE__->config({
          apns => {
              certification => "/cert.pem",
              private_key   => "/key.pem",
+             passwd        => "abcdefg",
          }
     },
 });
@@ -20,17 +21,21 @@ __PACKAGE__->setup;
 
 sub appname : Global {
     my ( $self, $c ) = @_;
-    $c->stash->{device_token} = 'd'x32;
-    $c->stash->{alert} = "Test";
-    $c->stash->{badge} = 5;
+    $c->stash->{apns} = {
+        device_token => 'd'x32,
+        message      => "Test",
+        badge        => 5,
+    };
     $c->forward('TestApp::View::APNS');
 }
 
 sub push : Global {
     my ( $self, $c ) = @_;
-    $c->stash->{device_token} = 'd'x32;
-    $c->stash->{alert} = "Test";
-    $c->stash->{badge} = 5;
+    $c->stash->{apns} = {
+        device_token => 'd'x32,
+        message      => "Test",
+        badge        => 5,
+    };
     $c->forward('TestApp::View::APNS');
 }
 
